@@ -18,9 +18,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check for index.html
+      - name: Check for game file
         run: |
           test -f index.html || { echo "index.html not found in repo root"; exit 1; }
+          SIZE=$(stat -c%s index.html)
+          echo "index.html size: $SIZE bytes"
+          if [ "$SIZE" -lt 200000 ]; then
+            echo "index.html looks too small to be the full game. Replace it with the single-file game."
+            exit 1
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -36,15 +42,13 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-         packages: ''
+          packages: ''
 
-      - name: Create web folder
+      - name: Create Capacitor project in separate folder
         run: |
-          mkdir -p www
-          cp index.html www/index.html
-
-      - name: Create Capacitor project
-        run: |
+          mkdir -p capbuild/www
+          cp index.html capbuild/www/index.html
+          cd capbuild
           npm init -y
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
           npx cap init "$APP_NAME" "$APP_ID" --web-dir www
@@ -54,12 +58,12 @@ jobs:
       - name: Set screen orientation
         if: env.ORIENTATION != ''
         run: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
+          MANIFEST=capbuild/android/app/src/main/AndroidManifest.xml
           sed -i "s/<activity/<activity android:screenOrientation=\"$ORIENTATION\"/" "$MANIFEST"
           grep -n "screenOrientation" "$MANIFEST"
 
       - name: Build debug APK
-        working-directory: android
+        working-directory: capbuild/android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
@@ -68,4 +72,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bastion-breaker-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: capbuild/android/app/build/outputs/apk/debug/app-debug.apk
