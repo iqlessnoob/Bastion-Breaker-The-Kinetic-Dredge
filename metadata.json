@@ -1,0 +1,6 @@
+{
+  "name": "Bastion Breaker: The Kinetic Dredge",
+  "description": "A 2D side-view action game where Vanguard-07 fights alongside an armored nuclear drill-train using an Engine-Blade and Kinetic Tether.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
