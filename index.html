@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <!--
   GAME NAME: Bastion Breaker: The Kinetic Dredge
-  VERSION: BB-R7 v1
+  VERSION: BB-R7 v2
   CHANGELOG:
+  - BB-R7 v2: Removed PARTS (ADVANCED) and LEDGER tabs from the Foundry (keeping UPGRADES, TRAIN, and PERKS), removed floating platforms/high ledges above the map in both Run and Sandbox modes, and made the Bastion drill completely harmless to the player (never damages the character; gently pushes the player ahead on front contact or allows safe footing on top).
   - BB-R7 v1: Added Simple UPGRADES Shop in the Foundry (first tab UPGRADES with 5 >=64px category buttons SWORD, GUN, HERO, TRAIN, TOOLS and renamed FORGE to PARTS (ADVANCED)) + Art Pass 3 (16x16 tiles, 4-layer parallax, props, icons, riveted steel Foundry & Title Screen): each upgrade row shows a pixel icon, plain name, 5 level boxes, Now: X and Next: Y with units, ore cost with icon, and green/grey/MAX BUY button; all level 0..5 numbers and ore costs in CFG & DATA_TABLES.upgrades; gun multi-bullet 8-deg fan spread (1..3) and piercing (0..3 enemies at full damage), sword damage/speed/reach with scaled slash arc, hero max health/shield/run speed, train hull & drill ore yield, and tool range/duration/cooldowns; base upgrade values multiply with PARTS (ADVANCED) parts and tiers via recomputeStats with num() safety; drag-scrollable Upgrades list with thin scrollbar, Mara category tips, and Give 500 ore / Max all upgrades / Reset upgrades debug buttons.
   - BB-R6 v1: Added Art Pass 2 — The Bastion, Wagons & Monsters (Step R6): added pixel art for The Bastion at 1 art px = 4 world px matching car hitboxes (45x30 art px = 180x120 world px; empty flatbed 30x30 art px = 120x120 world px) with roofline drawn at roof top; added steam-style drill locomotive (46x30 art px boiler with riveted brass bands over dark iron & brick-like panels, tall smokestack with fire & smoke, 3-frame flickering furnace window, glowing Ember-Heart furnace wheel on the side, 4-frame big wheels with moving connecting rods, couplers, and 28x30 art px 4-frame rotating hazard-striped drill cone with silver highlights & flying sparks/rock chips); added pixel-art wagons (Empty flatbed, Foundry Car with riveted posts & wooden slats, Smelter Car with molten crucible & scrap piles, Artillery Car with brass turret barrel & shell crate, Cryo-Vent Car with frosted tanks & icicles, Shield Pylon with cyan crystal spire, Drone Bay with hangar hatches & perched/flying collector drones, Med-Station with red cross cabin & green light, Plasma Shield Generator with pulsing purple-blue orb, and Thermal Conduit with glowing red-orange pipes & vents); added multi-part pixel-art monsters at 1 art px = 3 world px with 85% body hitboxes and scaled 3 armor zones (Mite Crawler Spore Beetle 13x9 art px / 33x23 hitbox, Shell Brute Cave Brute golem 30x22 art px / 76x56 hitbox, Glider Crystal Bat 14x11 art px / 36x28 hitbox with crystal shards/drips on hit, Spore Lobber Fungal Slime 16x14 art px / 41x36 hitbox, Rail Charger Rusted Gear-Bot 22x15 art px / 56x38 hitbox with spinning saw arm, and Husk Drone floating gear-bot 16x16 art px / 41x41 hitbox with rotating gear ring); cached all 20 VARIANTS with custom palettes, plate shapes & accents; added 0.08s white hit flash, pixel-art flying broken armor plates, Elite gold outline + pixel crown, 60x8 enemy health bars with 3 armor pips beside them, categorized/scrollable Sprite Viewer, and debug buttons to spawn each monster in front of the player.
   - BB-R5 v1: Added Art Pass 1 — The Hero, The NPC, Weapons & Effects (Step R5): built reusable Pixel Sprite System (makeSprite, px, ART palette table, SPRITES cache built at startup inside try/catch with coloured-box fallback, and drawSprite with imageSmoothingEnabled = false at 1 art px = 3 world px); replaced Vanguard-07 plain shapes with 14x18 art px (42x54 world px) chunky pixel-art diver (brass-gold domed helmet with wide glowing cyan visor and side lamp, dark grey undersuit, brass shoulder/chest/knee plates with rivets, brown backpack with coiled grey cable, chunky brass-toed boots, and buckled belt) aligned to a 24x44 world hitbox; added hero_idle (3 frames @ 2 fps), hero_run (5 frames @ 12 fps scaling with speed), hero_jump (3 frames: crouch, rising, tucked fall), hero_double_jump (4-frame spin), hero_hurt (1 frame + white flash), hero_defeat (3-frame falling-apart sequence), and hero_swing (3 frames synced with 0.08s windup / 0.10s active / 0.10s recovery); added rotating held items shown for 0.3s on use (item_pistol, item_blade 2-frame flickering flame sword, item_hook coil launcher, item_tripwire red-lens gadget); added pixel-art effect sprites (fx_blade_arc, fx_redline_flame, fx_overheat_steam, fx_parry_glyph 6-frame expanding cyan glyph, fx_shield_bubble, fx_return_flash, fx_double_jump_ring, fx_dust_puff, fx_ember_bolt, fx_hit_spark, fx_shatter_flash, fx_harpoon_head, fx_chain_link); added Chief Engineer Mara (npc_mara 14x18 4-frame idle @ 3 fps, mara_workbench 16x14 with glowing monitor, and 24x24 mara_portrait) on the Foundry Car rear in Run mode and beside the start in Sandbox with a floating USE prompt within 120 px that opens the Foundry menu; added soft ground/roof shadow under the hero; and added Show hitbox, Cycle hero animation, and interactive Sprite viewer debug tools.
@@ -900,7 +901,7 @@
         emberHeartMax: 100,
         emberHeartDrainRate: 5,
         emberHeartRefillRate: 10,
-        drillContactDamage: 15,
+        drillContactDamage: 0,
         drillPushVx: 320,
         drillPushVy: -200,
         drillImmuneTime: 1.50,
@@ -3709,9 +3710,9 @@
           { x: 9120, y: 1088 - 56, type: "obsidian_brute" }
         ],
 
-        // Named 50-tile map sections (each 50 cols wide x 40 rows tall)
+        // Named 50-tile map sections (each 50 cols wide x 40 rows tall) — floating platforms above the map removed
         mapSections: {
-          // SECTION 1 (cols 0..49): Original Training Cavern start, unmodified layout
+          // SECTION 1 (cols 0..49): Training Cavern start
           SEC_1: buildSectionGrid(function (rect) {
             // Left world boundary wall
             rect(0, 0, 1, 39, "#");
@@ -3719,134 +3720,50 @@
             rect(18, 34, 23, 34, ".");
             // Non-lethal Pit 1 (cols 42..47, 3 tiles deep -> row 37 shelf)
             rect(42, 34, 47, 36, ".");
-            // Original Platforms 1..5 (96, 160, 224, 288 px above row 34 floor)
-            rect(11, 31, 16, 31, "=");
-            rect(20, 29, 25, 29, "=");
-            rect(28, 27, 34, 27, "=");
-            rect(37, 25, 43, 25, "=");
-            rect(46, 27, 49, 27, "=");
           }),
 
-          // SECTION 2 (cols 50..99): Rusted Cavern Overhang, Pillars & Tall Wall 1
+          // SECTION 2 (cols 50..99): Rusted Cavern
           SEC_2: buildSectionGrid(function (rect) {
             // Checkpoint 1 at col 51 (local col 1)
             rect(1, 33, 1, 33, "!");
-            // Continuation of Plat 5
-            rect(0, 27, 2, 27, "=");
-            // Original Rock Overhang (cols 55..66 -> local 5..16, rows 20..23)
-            rect(5, 20, 16, 22, "#");
-            rect(7, 23, 14, 23, "#");
-            // Plat 6 under overhang (local 4..11, row 31)
-            rect(4, 31, 11, 31, "=");
-            // Dip 2 with spikes and bridge platform above
+            // Dip 2 with spikes
             rect(16, 34, 21, 34, ".");
             rect(18, 34, 19, 34, "^");
-            rect(15, 29, 20, 29, "=");
-            // Plat 8 & 9
-            rect(23, 31, 27, 31, "=");
-            rect(29, 28, 33, 28, "=");
-            rect(34, 25, 37, 25, "=");
-            // Tall Pillar Wall 1 at local cols 38..40 (rows 22..33 solid 'P', 12 tiles high so it cannot be skipped from floor)
-            rect(38, 22, 40, 33, "P");
-            // Descent platforms on right side of Tall Wall 1
-            rect(43, 27, 47, 27, "=");
-            rect(45, 31, 48, 31, "=");
           }),
 
-          // SECTION 3 (cols 100..149): Zone 2 Fungal Chasm — Narrow Tunnel & Spore Gorge
+          // SECTION 3 (cols 100..149): Zone 2 Fungal Chasm
           SEC_3: buildSectionGrid(function (rect) {
             // Checkpoint 2 at start of Zone 2 (local col 2)
             rect(2, 33, 2, 33, "!");
-            // Narrow 2-tile-high tunnel (local cols 6..15: rows 32..33 open, rows 25..31 solid rock)
-            rect(6, 25, 15, 31, "#");
-            rect(6, 25, 6, 31, "P");
-            rect(15, 25, 15, 31, "P");
-            // Climbable platforms up the left side onto the tunnel roof
-            rect(1, 31, 4, 31, "=");
-            rect(3, 28, 5, 28, "=");
-            // Big Pit (local cols 20..33, floor drops 4 tiles to row 38)
-            rect(20, 34, 33, 37, ".");
-            // Spikes in center of pit floor + safe stepping platforms to climb out
-            rect(25, 37, 28, 37, "^");
-            rect(21, 35, 23, 35, "=");
-            rect(30, 35, 32, 35, "=");
-            // High bridge platforms across the Big Pit
-            rect(18, 31, 22, 31, "=");
-            rect(25, 29, 29, 29, "=");
-            rect(32, 31, 36, 31, "=");
-            // Fungal Pillar arch & platforms (local cols 40..47)
-            rect(41, 4, 42, 27, "P");
-            rect(39, 29, 44, 29, "=");
-            rect(46, 31, 49, 31, "=");
+            // Big Pit (local cols 20..33, floor drops 2 tiles to row 36 so player can jump out without floating platforms)
+            rect(20, 34, 33, 35, ".");
+            rect(25, 35, 28, 35, "^");
           }),
 
-          // SECTION 4 (cols 150..199): Zone 2 Fungal Chasm — Tall Wall 2 & Spore Terrace
+          // SECTION 4 (cols 150..199): Zone 2 Fungal Chasm — Spore Terrace
           SEC_4: buildSectionGrid(function (rect) {
             // Checkpoint 3 at local col 2
             rect(2, 33, 2, 33, "!");
-            // Switchback platform climb up Tall Wall 2 (local cols 5..15)
-            rect(5, 31, 9, 31, "=");
-            rect(11, 28, 15, 28, "=");
-            rect(5, 25, 9, 25, "=");
-            rect(11, 22, 15, 22, "=");
-            // Tall Wall 2 at local cols 16..19 (rows 22..33 solid '#' and 'P', 12 tiles high)
-            rect(16, 22, 19, 33, "#");
-            rect(16, 22, 16, 33, "P");
-            rect(19, 22, 19, 33, "P");
-            // High road platforms descending from Tall Wall 2
-            rect(22, 24, 26, 24, "=");
-            rect(29, 27, 34, 27, "=");
-            rect(37, 30, 42, 30, "=");
-            // Lower floor spike hazard & safe platform
+            // Lower floor spike hazard
             rect(27, 33, 29, 33, "^");
-            rect(26, 31, 31, 31, "=");
-            // End of Zone 2 stepping platform
-            rect(44, 31, 48, 31, "=");
           }),
 
-          // SECTION 5 (cols 200..249): Zone 3 Volt-Quartz Caverns — Crystal Tunnel & Abyssal Trench
+          // SECTION 5 (cols 200..249): Zone 3 Volt-Quartz Caverns
           SEC_5: buildSectionGrid(function (rect) {
             // Checkpoint 4 at start of Zone 3 (local col 2)
             rect(2, 33, 2, 33, "!");
-            // Narrow 2-tile-high Crystal Tunnel (local cols 8..17: rows 32..33 open, rows 25..31 solid)
-            rect(8, 25, 17, 31, "#");
-            rect(8, 25, 8, 31, "P");
-            rect(17, 25, 17, 31, "P");
-            // Platforms to climb over the crystal tunnel roof
-            rect(3, 31, 6, 31, "=");
-            rect(5, 28, 7, 28, "=");
-            // Big Crystal Trench (local cols 23..38, floor drops to row 38)
-            rect(23, 34, 38, 37, ".");
-            // Safe stepping stones and spike pockets inside trench
-            rect(24, 37, 25, 37, "^");
-            rect(27, 35, 29, 35, "=");
-            rect(31, 37, 32, 37, "^");
-            rect(34, 35, 36, 35, "=");
-            // Multi-tier aerial platforms across Crystal Trench
-            rect(20, 31, 24, 31, "=");
-            rect(27, 28, 31, 28, "=");
-            rect(34, 26, 38, 26, "=");
-            rect(41, 29, 45, 29, "=");
-            rect(46, 31, 49, 31, "=");
+            // Crystal Trench (local cols 23..38, 2 tiles deep)
+            rect(23, 34, 38, 35, ".");
+            rect(24, 35, 25, 35, "^");
+            rect(31, 35, 32, 35, "^");
           }),
 
           // SECTION 6 (cols 250..299): Zone 3 Volt-Quartz Caverns — Bastion Gate & Quartz Altar
           SEC_6: buildSectionGrid(function (rect) {
             // Checkpoint 5 at local col 2
             rect(2, 33, 2, 33, "!");
-            // Climbable platforms on left side of Bastion Gate Wall
-            rect(5, 31, 9, 31, "=");
-            rect(11, 28, 15, 28, "=");
-            rect(6, 25, 10, 25, "=");
-            rect(12, 22, 16, 22, "=");
-            // Tall Bastion Gate Wall (local cols 18..20, rows 22..31 solid 'P', with 2-tile tunnel at rows 32..33)
-            rect(18, 22, 20, 31, "P");
-            // Spike before tunnel with platform above
+            // Spike hazard
             rect(14, 33, 15, 33, "^");
-            // Final Sanctuary platforms & Volt-Quartz Altar
-            rect(24, 25, 29, 25, "=");
-            rect(32, 28, 37, 28, "=");
-            rect(30, 31, 35, 31, "=");
             // Raised Altar at local cols 40..46, rows 32..33 & Final Checkpoint 6 at col 43
             rect(40, 32, 46, 33, "#");
             rect(43, 31, 43, 31, "!");
@@ -3855,7 +3772,7 @@
           })
         },
 
-        // Repeating 30-tile-wide (960 px) Run Track segments for Step B3 & B12 Run mode (with high rock ledges at row 25 for Harpoon grappling)
+        // Repeating 30-tile-wide (960 px) Run Track segments (high ledges/platforms above the map removed)
         runSegments: [
           {
             id: "SEG_A",
@@ -3867,10 +3784,7 @@
               { col: 19, len: 3 },
               { col: 25, len: 2 }
             ],
-            highLedges: [
-              { startCol: 4, endCol: 9 },
-              { startCol: 17, endCol: 22 }
-            ],
+            highLedges: [],
             bgPillars: [4, 16, 27],
             ventGlowCol: 10
           },
@@ -3884,10 +3798,7 @@
               { col: 22, len: 2 },
               { col: 27, len: 3 }
             ],
-            highLedges: [
-              { startCol: 5, endCol: 11 },
-              { startCol: 18, endCol: 24 }
-            ],
+            highLedges: [],
             bgPillars: [6, 20],
             ventGlowCol: 14
           },
@@ -3901,10 +3812,7 @@
               { col: 18, len: 2 },
               { col: 24, len: 3 }
             ],
-            highLedges: [
-              { startCol: 3, endCol: 8 },
-              { startCol: 15, endCol: 21 }
-            ],
+            highLedges: [],
             bgPillars: [3, 11, 23],
             ventGlowCol: 18
           },
@@ -3918,10 +3826,7 @@
               { col: 21, len: 2 },
               { col: 28, len: 3 }
             ],
-            highLedges: [
-              { startCol: 6, endCol: 12 },
-              { startCol: 19, endCol: 25 }
-            ],
+            highLedges: [],
             bgPillars: [8, 19],
             ventGlowCol: 24
           }
@@ -9412,7 +9317,7 @@
               return;
             }
 
-            // 1. Foundry / Anatomy Ledger Modal (Step R7 & BB-R7 v1: 64px-tall tabs & drag scrolling)
+            // 1. Foundry Modal (3 tabs: UPGRADES, TRAIN, PERKS)
             if (GAME.ledgerOpen) {
               var clsBtn = GAME.foundryCloseBtnRect || { x: 824, y: 12, w: 112, h: 64 };
               if (ux >= clsBtn.x && ux <= clsBtn.x + clsBtn.w && pt.y >= clsBtn.y && pt.y <= clsBtn.y + clsBtn.h) {
@@ -9425,21 +9330,9 @@
                 AUDIO.playLedgerToggle();
                 return;
               }
-              var fgTab = GAME.foundryTabForgeRect;
-              if (fgTab && ux >= fgTab.x && ux <= fgTab.x + fgTab.w && pt.y >= fgTab.y && pt.y <= fgTab.y + fgTab.h) {
-                GAME.foundryTab = "FORGE";
-                AUDIO.playLedgerToggle();
-                return;
-              }
               var trTab = GAME.foundryTabTrainRect;
               if (trTab && ux >= trTab.x && ux <= trTab.x + trTab.w && pt.y >= trTab.y && pt.y <= trTab.y + trTab.h) {
                 GAME.foundryTab = "TRAIN";
-                AUDIO.playLedgerToggle();
-                return;
-              }
-              var ldTab = GAME.foundryTabLedgerRect;
-              if (ldTab && ux >= ldTab.x && ux <= ldTab.x + ldTab.w && pt.y >= ldTab.y && pt.y <= ldTab.y + ldTab.h) {
-                GAME.foundryTab = "LEDGER";
                 AUDIO.playLedgerToggle();
                 return;
               }
@@ -9458,12 +9351,8 @@
               GAME.ledgerDragMoved = false;
               if (GAME.foundryTab === "TRAIN") {
                 GAME.ledgerDragStartScroll = GAME.foundryTrainScrollY || 0;
-              } else if (GAME.foundryTab === "FORGE") {
-                GAME.ledgerDragStartScroll = GAME.foundryForgeScrollY || 0;
-              } else if (GAME.foundryTab === "UPGRADES") {
-                GAME.ledgerDragStartScroll = GAME.foundryUpgradesScrollY || 0;
               } else {
-                GAME.ledgerDragStartScroll = GAME.ledgerScrollY || 0;
+                GAME.ledgerDragStartScroll = GAME.foundryUpgradesScrollY || 0;
               }
               return;
             }
@@ -11210,10 +11099,11 @@
       }
 
       function toggleLedger(forceState, preferredTab) {
+        var nextTab = (preferredTab === "TRAIN" || preferredTab === "PERKS") ? preferredTab : "UPGRADES";
         var nextState = typeof forceState === "boolean" ? forceState : !GAME.ledgerOpen;
         if (nextState === GAME.ledgerOpen) {
           if (GAME.ledgerOpen && preferredTab) {
-            GAME.foundryTab = preferredTab;
+            GAME.foundryTab = nextTab;
           }
           return;
         }
@@ -11222,8 +11112,8 @@
         GAME.ledgerDragPointerId = null;
         GAME.wagonSwapSourceSlot = -1;
         if (GAME.ledgerOpen) {
-          // Step BB-R7 v1 Requirement 1: The Foundry opens on a new first tab called UPGRADES
-          GAME.foundryTab = preferredTab || "UPGRADES";
+          // Step BB-R7 v1 & v2: The Foundry opens on UPGRADES (with TRAIN and PERKS available)
+          GAME.foundryTab = preferredTab ? nextTab : "UPGRADES";
           // Step R7 Requirement 7: Foundry menu slides in over 0.15 s & Mara displays one short hint line
           GAME.foundrySlideTimer = 0.15;
           var lines = DATA_TABLES.maraIdleLines || [];
@@ -17123,10 +17013,8 @@
           pl.inDrillZone = false;
         }
 
-        // 2. Step R3 Requirement 4, 5 & 6: Drill hitbox & damage rules
-        // The damaging area is ONLY the spinning cone at the front of the engine (front 70% of the cone).
-        // It does NOT include the train roof, the engine body, or any space above the roofline.
-        // Anything whose feet are at or above the roofline is NEVER hit by the drill.
+        // 2. Step BB-R7 v2: The drill cannot damage the user (character).
+        // The player can safely stand on the drill housing or be gently pushed ahead of the drill tip with zero damage.
         var dRect = getDrillHitboxRect();
         var overlapsDrillCone =
           pl.x + pl.w > dRect.x &&
@@ -17139,40 +17027,29 @@
           return;
         }
 
-        // Requirement 4 & 5: Feet at or above the roofline, or standing on the roof -> never hit by the drill
         if (pl.onTrainRoof || (pl.y + pl.h) <= b.roofY + 2) {
+          pl.inDrillZone = false;
           return;
         }
 
-        // Requirement 5 & 6: Cannot be hit by the drill again until leaving the drill area, and while immune standing in the drill area is allowed
-        if (pl.inDrillZone || pl.drillImmuneTimer > 0 || pl.invulnTimer > 0) {
+        // Landing on top of the drill cone lets the character stand on it safely
+        if (pl.vy >= 0 && prevBottom <= dRect.y + 14) {
+          pl.y = dRect.y - pl.h;
+          pl.vy = 0;
+          pl.onGround = true;
+          pl.airJumpsLeft = Math.max(pl.airJumpsLeft || 0, CFG.maxAirJumps);
+          pl.inDrillZone = false;
           return;
         }
 
-        // Touching the cone from the front or below the roofline while not on the roof:
-        // 15 damage, pushed forward and slightly up away from the train (vx = 320, vy = -200),
-        // immune to drill damage for 1.5 s, and cannot be hit again until leaving the drill area.
-        // Never bounce the player up onto the drill or the roof!
-        var plCx = pl.x + pl.w * 0.5;
-        pl.vx = CFG.drillPushVx;   // +320 px/s forward away from the train
-        pl.vy = CFG.drillPushVy;   // -200 px/s slightly up
-        pl.x = Math.max(pl.x, dRect.x + dRect.w - 2);
-        pl.onGround = false;
-        pl.onTrainRoof = false;
-        pl.hurtLockTimer = CFG.playerHurtLockTime;
-        pl.drillImmuneTimer = CFG.drillImmuneTime; // 1.5 s immunity to drill damage
-        pl.invulnTimer = Math.max(pl.invulnTimer, CFG.playerInvulnTime);
-        pl.inDrillZone = true;
-
-        applyDamageToPlayer(pl, CFG.drillContactDamage, plCx, pl.y - 8);
-        spawnSparkBurst(dRect.x + dRect.w * 0.5, pl.y + pl.h * 0.5, 14, "#ff9436");
-        shake(4, 0.14);
-        if (pl.hp <= 0) {
-          handlePlayerDeath(pl);
-        } else {
-          AUDIO.playPlayerHurt();
+        // Standing in front of the advancing drill gently nudges the character forward ahead of the tip with zero damage
+        pl.inDrillZone = false;
+        if (pl.x + pl.w * 0.5 >= b.engineFrontX) {
+          pl.x = Math.max(pl.x, b.drillTipX + 2);
+          if (b.currentSpeed > 0 && pl.vx < b.currentSpeed) {
+            pl.vx = b.currentSpeed;
+          }
         }
-        updateDebugPanelUI();
       }
 
       function updateKineticTether(dt) {
@@ -24105,6 +23982,10 @@
           var topRowY = 48;
           var tabH = 64;
           var curTab = GAME.foundryTab || "UPGRADES";
+          if (curTab !== "UPGRADES" && curTab !== "TRAIN" && curTab !== "PERKS") {
+            curTab = "UPGRADES";
+            GAME.foundryTab = "UPGRADES";
+          }
 
           // Mara's Portrait Box at Top-Left (x: 24, y: 48, w: 266, h: 64)
           var maraBoxX = 24;
@@ -24167,19 +24048,17 @@
             ctx.fillText("\"" + hintText + "\"", maraBoxX + 64, topRowY + 42);
           }
 
-          // 5 Tabs: UPGRADES, PARTS (ADVANCED), TRAIN, PERKS, LEDGER (each 64 px tall)
+          // 3 Tabs: UPGRADES, TRAIN, PERKS (each 64 px tall)
           var tabDefs = [
-            { id: "UPGRADES", label: "UPGRADES", x: 296, w: 112 },
-            { id: "FORGE", label: "PARTS (ADVANCED)", x: 412, w: 162 },
-            { id: "TRAIN", label: "TRAIN", x: 578, w: 84 },
-            { id: "PERKS", label: "PERKS", x: 666, w: 84 },
-            { id: "LEDGER", label: "LEDGER", x: 754, w: 90 }
+            { id: "UPGRADES", label: "UPGRADES", x: 300, w: 180 },
+            { id: "TRAIN", label: "TRAIN", x: 488, w: 170 },
+            { id: "PERKS", label: "PERKS", x: 666, w: 170 }
           ];
           GAME.foundryTabUpgradesRect = { x: tabDefs[0].x, y: topRowY, w: tabDefs[0].w, h: tabH };
-          GAME.foundryTabForgeRect = { x: tabDefs[1].x, y: topRowY, w: tabDefs[1].w, h: tabH };
-          GAME.foundryTabTrainRect = { x: tabDefs[2].x, y: topRowY, w: tabDefs[2].w, h: tabH };
-          GAME.foundryTabPerksRect = { x: tabDefs[3].x, y: topRowY, w: tabDefs[3].w, h: tabH };
-          GAME.foundryTabLedgerRect = { x: tabDefs[4].x, y: topRowY, w: tabDefs[4].w, h: tabH };
+          GAME.foundryTabForgeRect = null;
+          GAME.foundryTabTrainRect = { x: tabDefs[1].x, y: topRowY, w: tabDefs[1].w, h: tabH };
+          GAME.foundryTabPerksRect = { x: tabDefs[2].x, y: topRowY, w: tabDefs[2].w, h: tabH };
+          GAME.foundryTabLedgerRect = null;
 
           var ti;
           for (ti = 0; ti < tabDefs.length; ti++) {
@@ -24192,15 +24071,8 @@
             RENDER.strokeRoundRect(ctx, td.x, topRowY, td.w, tabH, 6);
             ctx.textAlign = "center";
             ctx.fillStyle = isAct ? "#0C0A10" : "#F4EFE6";
-            if (td.id === "FORGE") {
-              ctx.font = "bold 16px sans-serif";
-              ctx.fillText("PARTS", td.x + td.w * 0.5, topRowY + 29);
-              ctx.font = "bold 13px sans-serif";
-              ctx.fillText("(ADVANCED)", td.x + td.w * 0.5, topRowY + 49);
-            } else {
-              ctx.font = "bold 17px sans-serif";
-              ctx.fillText(td.label, td.x + td.w * 0.5, topRowY + 39);
-            }
+            ctx.font = "bold 20px sans-serif";
+            ctx.fillText(td.label, td.x + td.w * 0.5, topRowY + 39);
           }
 
           // CLOSE Button (64 px tall)
@@ -24223,12 +24095,6 @@
 
           if (curTab === "UPGRADES") {
             RENDER.drawFoundryUpgradesTab(ctx, viewX, viewY, viewW, viewH);
-            ctx.restore();
-            return;
-          }
-
-          if (curTab === "FORGE") {
-            RENDER.drawFoundryForgeTab(ctx, viewX, viewY, viewW, viewH);
             ctx.restore();
             return;
           }
