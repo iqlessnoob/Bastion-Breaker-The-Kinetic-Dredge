@@ -1,0 +1,100 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "*" ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Bastion Breaker APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Web Assets & Capacitor Android Project
+        run: |
+          mkdir -p apk-build/www
+          cp index.html apk-build/www/index.html
+          cd apk-build
+          npm init -y
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Bastion Breaker" "com.bastionbreaker.dredge" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure Landscape Fullscreen Immersive Mode
+        run: |
+          MANIFEST="apk-build/android/app/src/main/AndroidManifest.xml"
+          # Lock activity to sensorLandscape and enable hardware acceleration
+          sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode" android:hardwareAccelerated="true"/' "$MANIFEST"
+
+          # Configure MainActivity for sticky immersive fullscreen (hides status & navigation bars)
+          MAIN_ACT="apk-build/android/app/src/main/java/com/bastionbreaker/dredge/MainActivity.java"
+          cat << 'EOF' > "$MAIN_ACT"
+          package com.bastionbreaker.dredge;
+
+          import android.os.Bundle;
+          import android.view.View;
+          import android.view.WindowManager;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  hideSystemUI();
+              }
+
+              @Override
+              public void onWindowFocusChanged(boolean hasFocus) {
+                  super.onWindowFocusChanged(hasFocus);
+                  if (hasFocus) {
+                      hideSystemUI();
+                  }
+              }
+
+              private void hideSystemUI() {
+                  View decorView = getWindow().getDecorView();
+                  decorView.setSystemUiVisibility(
+                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                      | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_FULLSCREEN
+                  );
+              }
+          }
+          EOF
+
+      - name: Build Ready-to-Install Android APK
+        run: |
+          cd apk-build/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../../BastionBreaker.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BastionBreaker-APK
+          path: BastionBreaker.apk
+          if-no-files-found: error
