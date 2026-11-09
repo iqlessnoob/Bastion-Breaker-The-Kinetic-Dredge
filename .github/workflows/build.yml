@@ -45,13 +45,11 @@ jobs:
 
       - name: Configure Landscape Fullscreen Mode
         run: |
-          MANIFEST="apk-build/android/app/src/main/AndroidManifest.xml"
-          sed -i 's/android:name=".MainActivity"/android:name=".MainActivity" android:screenOrientation="sensorLandscape" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode" android:hardwareAccelerated="true"/' "$MANIFEST"
-
           MAIN_ACT="apk-build/android/app/src/main/java/com/bastionbreaker/dredge/MainActivity.java"
           cat << 'EOF' > "$MAIN_ACT"
           package com.bastionbreaker.dredge;
 
+          import android.content.pm.ActivityInfo;
           import android.os.Bundle;
           import android.view.View;
           import android.view.WindowManager;
@@ -61,6 +59,7 @@ jobs:
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   hideBars();
               }
